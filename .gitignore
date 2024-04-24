@@ -4,6 +4,6 @@ migrations
 Scripts
 Lib
 Include
-__pychache__
+__pycache__
 .vscode
 alembic.ini
