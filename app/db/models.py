@@ -1,11 +1,13 @@
 from __future__ import annotations
 from typing import List, Optional
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 from sqlalchemy import Column, ForeignKey, Table, UniqueConstraint
-from sqlalchemy import func
+from sqlalchemy import func, event
 from sqlalchemy.orm import relationship 
 from sqlalchemy.orm import Mapped, MappedColumn
+from sqlalchemy.orm import validates
+from sqlalchemy.orm import ORMExecuteState, with_expression, with_loader_criteria
 
 from app.db.database import Base
 
@@ -19,40 +21,24 @@ user_group_table = Table(
 )
 
 
-user_task_table = Table(
-    "user_task",
-    Base.metadata,
-    Column("user_id", ForeignKey("user.id", primary_key=True)),
-    Column("task_id", ForeignKey("task.id", primary_key=True)),
-    UniqueConstraint("user_id", "task_id")
-)
+# user_task_table = Table(
+#     "user_task",
+#     Base.metadata,
+#     Column("user_id", ForeignKey("user.id", primary_key=True)),
+#     Column("task_id", ForeignKey("task.id", primary_key=True)),
+#     UniqueConstraint("user_id", "task_id")
+# )
 
 
 group_task_table = Table(
     "group_task",
     Base.metadata,
     Column("group_id", ForeignKey("group.id", primary_key=True)),
-    Column("task_id", ForeignKey("task.id", primary_key=True)),
+    Column("task_id", ForeignKey("task.id", primary_key=True, ondelete="CASCADE")),
     UniqueConstraint('group_id', 'task_id')
 )
 
 
-# group_inactive_task_table = Table(
-#     "group_inactive_task",
-#     Base.metadata,
-#     Column("group_id", ForeignKey("group.id", primary_key=True)),
-#     Column("inactive_task_id", ForeignKey("inactive_task.id", primary_key=True)),
-#     UniqueConstraint('group_id', 'inactive_task_id')
-# )
-
-
-# user_inactive_task_table = Table(
-#     "user_inactive_task",
-#     Base.metadata,
-#     Column("user_id", ForeignKey("user.id", primary_key=True)),
-#     Column("incative_task_id", ForeignKey("inactive_task.id", primary_key=True)),
-#     UniqueConstraint('user_id', 'inactive_task_id')
-# )
 
 
 class User(Base):
@@ -66,14 +52,10 @@ class User(Base):
 
     group: Mapped[List[Group]] = relationship(
         "Group", secondary=user_group_table,
-        back_populates="members"
+        back_populates="members",
+        lazy="selectin"
     )
     
-    # tasks: Mapped[List[Task]] = relationship(
-    #     "Task", secondary=user_group_table,
-    #     back_populates="task"
-    # )
-
 
 class Group(Base):
     __tablename__ = "group"
@@ -90,7 +72,8 @@ class Group(Base):
 
     tasks: Mapped[List[Task]] = relationship(
         "Task", secondary=group_task_table,
-            back_populates="groups"
+            back_populates="groups",
+            lazy="selectin",
     )
 
 
@@ -110,16 +93,18 @@ class Task(Base):
     groups: Mapped[List[Group]] = relationship(
         "Group", secondary=group_task_table,
         back_populates="tasks",
-        lazy="selectin"
+        lazy="selectin",
+        cascade="all, delete"
     )
     
-
-# class IncativeTask(Base):
-#     __tablename__ = "inactive_task"
-
-#     id: Mapped[int] = MappedColumn(primarykey=True, autoincrement=True)
-#     description: Mapped[str] = MappedColumn()
-#     author: Mapped[str] = MappedColumn()
-#     priority: Mapped[int] = MappedColumn()
-#     inactive_from: Mapped[date] = MappedColumn(server_default=func.current_date())
-#     status: Mapped[str] = MappedColumn()
+    @validates('status')
+    def validate_task_status(self, key, value):
+        if self.expire_on < self.updated_at:
+            return "expired"
+        return value
+    
+# @event.listens_for(Task, 'do_orm_execute')
+# def recieve_do_orm_execute(execute_state: ORMExecuteState):
+#     print(execute_state, "<-------------------------------------------orm_execute_state")
+#     if execute_state.is_update:
+#         execute_state

@@ -1,6 +1,6 @@
 import datetime
 from typing import List, Optional
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, computed_field
 
 from app.api.schemas.group import GroupReturn
 
@@ -21,18 +21,38 @@ class TaskToUsers(TaskBaseScheme):
     users: List[str] = Field(default=[''])
 
 
+class TaskBaseReturnScheme(TaskBaseScheme):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    status: str
+    updated_at: Optional[datetime.date]
+
+
 class TaskToGroupReturnScheme(TaskBaseScheme):
     model_config = ConfigDict(from_attributes=True)
     id: int
+    status: str
+    updated_at: Optional[datetime.date]
     groups: List[GroupReturn]
 
     @field_validator("groups")
     @classmethod
-    def correct_output(cls, value):
-        return [g.name for g in value]
+    def correct_output(cls, groups) -> List[str]:
+        return [g.name for g in groups]
 
+
+class TaskReturnList(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    @computed_field
+    @property
+    def total(self) -> int:
+        return len(self.tasks)
+
+    tasks: List[TaskBaseReturnScheme]
     
-class TaskUpdateScheme(BaseModel):
-    id: int
-    status: str
-
+    @field_validator("tasks")
+    @classmethod
+    def sort_tasks(cls,  tasks: List) -> List[TaskToGroupReturnScheme]:
+        tasks.sort(key=lambda x: (x.priority, x.expire_on), reverse=True)
+        return tasks    

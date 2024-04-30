@@ -49,6 +49,7 @@ class UnitOfWork(IUnitOfWork):
 
 
     async def __aexit__(self, *args):
+        
         await self.session.rollback()
         await self.session.close()
         self.repositories = [r.__class__ for r in self.repositories]

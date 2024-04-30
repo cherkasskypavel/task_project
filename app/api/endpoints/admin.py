@@ -18,7 +18,7 @@ async def get_admin_service(uow: IUnitOfWork = Depends(MainUOW)) -> AdminService
 async def add_group(group: gr.GroupInput, 
                     admin: u_sch.UserFromToken = Depends(auth.get_user_from_token),
                     service: AdminService = Depends(get_admin_service)):
-    
+        
     return await service.add_group(admin, group)
 
 
@@ -46,3 +46,4 @@ async def get_group_and_users(group: Optional[str] = None,
                                service: AdminService = Depends(get_admin_service)):
     result = await service.get_group_and_users(admin, group)
     return result
+

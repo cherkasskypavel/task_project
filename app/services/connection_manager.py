@@ -3,7 +3,7 @@
 from typing import Dict
 from fastapi import WebSocket
 
-from app.api.schemas.notification import NewGroupTaskNotification
+from app.api.schemas.notification import GroupTaskNotification
 from app.api.schemas.user import UserFromToken, UserSafeReturn
 
 
@@ -22,7 +22,7 @@ class ConnectionManager:
         del self.active_connections[user.username]
 
 
-    async def send_group_notification(self, notification: NewGroupTaskNotification,
+    async def send_group_notification(self, notification: GroupTaskNotification,
                                  user: UserSafeReturn):
         connected_user = self.active_connections.get(user.username)
         if connected_user is None:

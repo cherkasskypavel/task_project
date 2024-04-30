@@ -1,7 +1,7 @@
 from typing import Any, Optional
 from pydantic import BaseModel, ConfigDict
 
-from app.api.schemas.task import TaskToGroupReturnScheme
+from app.api.schemas.task import TaskBaseReturnScheme
 
 
 class BaseNotification(BaseModel):
@@ -9,9 +9,9 @@ class BaseNotification(BaseModel):
     task: Optional[Any]  # добавить TypeVar, как только для юзеров добавится ендпоинт
 
 
-class NewGroupTaskNotification(BaseNotification):
+class GroupTaskNotification(BaseNotification):
     model_config = ConfigDict(from_attributes=True)
     
 
-    message: str = "Назначена новая задача для группы"
-    task: TaskToGroupReturnScheme
+    message: str = "Задача обновлена"
+    task: TaskBaseReturnScheme

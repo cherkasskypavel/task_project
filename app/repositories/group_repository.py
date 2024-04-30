@@ -3,7 +3,7 @@ from app.db.models import Group, User
 
 class GroupRepository(SARepository):
     model = Group
-
+    
 
     async def add_member(self, member: User, group: Group) -> None:
         group.members.append(member)
