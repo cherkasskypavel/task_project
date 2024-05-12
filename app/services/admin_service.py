@@ -1,8 +1,9 @@
 from typing import List, Optional
 from fastapi import HTTPException, status
+from app.api.schemas.group import UserGroupSchemeReturn, UserGroupScheme
+from app.api.schemas.group import GroupInput, GroupReturn
+from app.api.schemas.user import UserFromToken
 from app.utils.unitofwork import IUnitOfWork
-import app.api.schemas.user as u_sch
-import app.api.schemas.group as gr
 
 
 
@@ -11,8 +12,8 @@ class AdminService:
         self.uow = uow
 
 
-    async def add_users_to_group(self, admin: u_sch.UserFromToken,
-                                addition_scheme: gr.UserGroupScheme):
+    async def add_users_to_group(self, admin: UserFromToken,
+                                addition_scheme: UserGroupScheme) -> UserGroupSchemeReturn:
         if admin.role != "admin":
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                                 detail="Вам доступ запрещен.")
@@ -37,14 +38,11 @@ class AdminService:
 
                 await self.uow.commit()
                 await self.uow.refresh(db_group)
-                return gr.UserGroupSchemeReturn.model_validate(db_group)
+                return UserGroupSchemeReturn.model_validate(db_group)
             
-                # members = await g_repo.get_members(db_group)
-                # return gr.UserGroupSchemeReturn(name=addition_scheme.name, members=members)    
 
-
-    async def delete_users_from_group(self, admin: u_sch.UserFromToken,
-                                     delete_scheme: gr.UserGroupScheme):
+    async def delete_users_from_group(self, admin: UserFromToken,
+                                     delete_scheme: UserGroupScheme) -> UserGroupSchemeReturn:
         if admin.role != "admin":
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                                 detail="Вам доступ запрещен.")
@@ -66,11 +64,11 @@ class AdminService:
                 await self.uow.commit()
                 await self.uow.refresh(db_group)
 
-                return gr.UserGroupSchemeReturn.model_validate(db_group)
+                return UserGroupSchemeReturn.model_validate(db_group)
 
     
-    async def add_group(self, admin: u_sch.UserFromToken, 
-                        group: gr.GroupInput):
+    async def add_group(self, admin: UserFromToken, 
+                        group: GroupInput) -> GroupReturn:
         if admin.role != "admin":
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                                 detail="Вам доступ запрещен.")
@@ -79,32 +77,32 @@ class AdminService:
                 g_repo = self.uow.repositories[1]
 
                 new_group = await g_repo.add_one(group.model_dump())
-                group_to_return = gr.GroupReturn.model_validate(new_group)
+                group_to_return = GroupReturn.model_validate(new_group)
                 await self.uow.commit()
                 return group_to_return
                 
     
-    async def get_group_and_users(self, admin: u_sch.UserFromToken,
-                                  group: Optional[str]):
+    async def get_group_and_users(self, admin: UserFromToken,
+                                  group: Optional[str]) -> List[UserGroupSchemeReturn]:
         if admin.role != "admin":
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                                 detail="Вам доступ запрещен.")
         else:
             async with self.uow:
                 g_repo = self.uow.repositories[1]
-                return_data: List[gr.UserGroupSchemeReturn] = []
+                return_data: List[UserGroupSchemeReturn] = []
 
                 if group is None:
                     db_groups = await g_repo.get_all()
                     for group in db_groups:
                         return_data.append(
-                            gr.UserGroupSchemeReturn.model_validate(group)
+                            UserGroupSchemeReturn.model_validate(group)
                         )
                 else:
                     db_group = await g_repo.get_one(name=group)
-                    return gr.UserGroupSchemeReturn.model_validate(db_group)    
+                    return_data.append(db_group)    
             return return_data
                     
 
 
-                    
+ 

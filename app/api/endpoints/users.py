@@ -3,9 +3,9 @@ from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 
 from app.api.schemas.access_token import Token
 import app.api.schemas.user as u_sch
-from app.utils.unitofwork import IUnitOfWork
-from app.utils.main_uow import MainUOW 
 from app.services.user_service import UserService
+from app.utils.main_uow import MainUOW 
+from app.utils.unitofwork import IUnitOfWork
 
 auth = APIRouter(prefix="/auth")
 

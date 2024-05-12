@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import List
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.repositories.base_repository import SARepository
 from app.db.database import session_maker
+from app.repositories.base_repository import SARepository
 
 
 class IUnitOfWork(ABC):

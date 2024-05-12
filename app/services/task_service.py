@@ -1,16 +1,14 @@
 from __future__ import annotations
 import datetime
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import HTTPException, status
 
-
-from app.utils.unitofwork import IUnitOfWork
-from app.api.schemas.user import UserFromToken, UserSafeReturn
-from app.api.schemas.task import TaskToGroups, TaskToGroupReturnScheme, TaskReturnList, TaskBaseReturnScheme
 from app.api.schemas.notification import GroupTaskNotification
-from app.api.endpoints.dashboard import manager as ws_manager
+from app.api.schemas.task import TaskToGroups, TaskToGroupReturnScheme, TaskBaseReturnScheme
+from app.api.schemas.user import UserFromToken, UserSafeReturn
+from app.utils.unitofwork import IUnitOfWork
 
 
 class TaskStatus(Enum):
@@ -21,14 +19,16 @@ class TaskStatus(Enum):
     deleted = 4    
 
 
+
 class TaskService:
+                                             
     def __init__(self, uow: IUnitOfWork):
         self.uow = uow
 
-
+    
     async def create_group_task(self,
                           task_scheme: TaskToGroups,
-                          author: UserFromToken):
+                          author: UserFromToken) -> TaskToGroupReturnScheme:
         
         task_data = task_scheme.model_dump(exclude_none=True,
                                           exclude_defaults=True,
@@ -58,8 +58,9 @@ class TaskService:
         return new_task
 
     
-    async def send_task_to_groups(self, task: TaskToGroupReturnScheme):
-        
+    async def send_task_to_groups(self, task: TaskToGroupReturnScheme) -> None:
+        from app.api.endpoints.dashboard import manager as ws_manager
+
         notification = GroupTaskNotification(
             task=TaskBaseReturnScheme.model_validate(task)
         ) 
@@ -79,7 +80,7 @@ class TaskService:
                     continue
  
 
-    async def update_task_status(self, task_id: int, author: UserFromToken):
+    async def update_task_status(self, task_id: int, author: UserFromToken) -> TaskToGroupReturnScheme:
 
         async with self.uow:
             task_repo = self.uow.repositories[2]
@@ -120,30 +121,28 @@ class TaskService:
 
 
     async def get_tasks(self, group: Optional[str], 
-                        user: UserFromToken):
+                        user: UserFromToken) -> List[TaskBaseReturnScheme]:
         async with self.uow:
             user_repo = self.uow.repositories[0]
             group_repo = self.uow.repositories[1]
 
-            task_list = []
+            task_set = set()
 
             db_user = await user_repo.get_one(username=user.username)
             
             if group is None:
                 for g in db_user.group:
-                    task_list.extend(g.tasks)
+                    task_set.update(g.tasks)
             else:
                 db_group = await group_repo.get_one(name=group)
                 if db_group not in db_user.group and user.role != "admin":
                     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                                         detail="Вы не состоите в этой группе")
-                task_list.extend(db_group.tasks)
-        
-            result = TaskReturnList(tasks=task_list)
-        return result
+                task_set.update(db_group.tasks)
+            return [TaskBaseReturnScheme.model_validate(t) for t in task_set]
     
 
-    async def get_one_task(self, id: int, user: UserFromToken):
+    async def get_one_task(self, id: int, user: UserFromToken) -> TaskBaseReturnScheme:
         async with self.uow:
             task_repo = self.uow.repositories[2]
             user_repo = self.uow.repositories[0]
@@ -163,7 +162,7 @@ class TaskService:
             return TaskBaseReturnScheme.model_validate(db_task)
         
 
-    async def delete_one_task(self, id: int, user: UserFromToken):
+    async def delete_one_task(self, id: int, user: UserFromToken) -> TaskToGroupReturnScheme:
         async with self.uow:
             task_repo = self.uow.repositories[2]
             deleted_tasks = await task_repo.delete(id=id)
@@ -172,6 +171,7 @@ class TaskService:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                     detail="Задачи не найдены")
             if deleted_tasks[0].author != user.username and user.role != "admin":
+                await self.uow.rollback()
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                                     detail="Вы не можете удалять эту задачу")
     
@@ -181,7 +181,7 @@ class TaskService:
             return result
         
     
-    async def delete_expired(self, user: UserFromToken):
+    async def delete_expired(self, user: UserFromToken) -> int:
         if user.role != "admin":
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                                 detail="Вы не можете выполнять это действие")
@@ -194,7 +194,7 @@ class TaskService:
         return result 
     
 
-    async def mark_expired(self, user: UserFromToken):
+    async def mark_expired(self, user: UserFromToken) -> int:
         if user.role != "admin":
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                                 detail="Вы не можете выполнять это действие")
@@ -208,3 +208,5 @@ class TaskService:
             result = len(expired_tasks)
             await self.uow.commit()
         return result
+    
+    

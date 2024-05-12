@@ -1,9 +1,13 @@
-from app.utils.unitofwork import IUnitOfWork
-from app.api.schemas.user import UserSignUp, UserReturn, UserLogin
+from typing import List
+
 from fastapi import HTTPException, status
 
-import app.core.security.cryptography as crypt
+from app.api.schemas.group import GroupReturn
+from app.api.schemas.user import UserSignUp, UserReturn, UserLogin
+from app.api.schemas.user import UserFromToken
 import app.core.security.auth as auth
+import app.core.security.cryptography as crypt
+from app.utils.unitofwork import IUnitOfWork
 
 class UserService:
     def __init__(self, uow: IUnitOfWork):
@@ -29,7 +33,7 @@ class UserService:
                 return user_to_return
         
     
-    async def authorize_user(self, logging_user: UserLogin):
+    async def authorize_user(self, logging_user: UserLogin) -> dict:
 
         async with self.uow:
             user_repo = self.uow.repositories[0]
@@ -46,3 +50,10 @@ class UserService:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail=e)
             
+    
+    async def get_groups(self, user: UserFromToken) -> List[GroupReturn]:
+        async with self.uow:
+            user_repo = self.uow.repositories[0]
+            db_user = await user_repo.get_one(username=user.username)
+
+            return [GroupReturn.model_validate(g) for g in db_user.group]

@@ -1,7 +1,6 @@
-from typing import TypeVar
 
 from app.repositories.base_repository import SARepository
-from app.db.models import Task, User, Group
+from app.db.models import Task, Group
 
 
 
@@ -14,6 +13,5 @@ class TaskRepository(SARepository):
 
 
         
-# async def add_user_task_record(self, task: Task, group: Group) -> None:
-#     task.users.append(group)
+
     

@@ -1,13 +1,12 @@
 from __future__ import annotations
-from typing import List, Optional
 from datetime import date, datetime
+from typing import List, Optional
 
 from sqlalchemy import Column, ForeignKey, Table, UniqueConstraint
-from sqlalchemy import func, event
+from sqlalchemy import func
 from sqlalchemy.orm import relationship 
 from sqlalchemy.orm import Mapped, MappedColumn
 from sqlalchemy.orm import validates
-from sqlalchemy.orm import ORMExecuteState, with_expression, with_loader_criteria
 
 from app.db.database import Base
 
@@ -21,15 +20,6 @@ user_group_table = Table(
 )
 
 
-# user_task_table = Table(
-#     "user_task",
-#     Base.metadata,
-#     Column("user_id", ForeignKey("user.id", primary_key=True)),
-#     Column("task_id", ForeignKey("task.id", primary_key=True)),
-#     UniqueConstraint("user_id", "task_id")
-# )
-
-
 group_task_table = Table(
     "group_task",
     Base.metadata,
@@ -37,8 +27,6 @@ group_task_table = Table(
     Column("task_id", ForeignKey("task.id", primary_key=True, ondelete="CASCADE")),
     UniqueConstraint('group_id', 'task_id')
 )
-
-
 
 
 class User(Base):
@@ -103,8 +91,3 @@ class Task(Base):
             return "expired"
         return value
     
-# @event.listens_for(Task, 'do_orm_execute')
-# def recieve_do_orm_execute(execute_state: ORMExecuteState):
-#     print(execute_state, "<-------------------------------------------orm_execute_state")
-#     if execute_state.is_update:
-#         execute_state

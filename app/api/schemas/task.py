@@ -1,5 +1,5 @@
 import datetime
-from typing import List, Optional
+from typing import List, Optional, Set, Union
 from pydantic import BaseModel, ConfigDict, Field, field_validator, computed_field
 
 from app.api.schemas.group import GroupReturn
@@ -49,10 +49,9 @@ class TaskReturnList(BaseModel):
     def total(self) -> int:
         return len(self.tasks)
 
-    tasks: List[TaskBaseReturnScheme]
+    tasks: Union[List[TaskBaseReturnScheme], Set[TaskBaseReturnScheme]]
     
     @field_validator("tasks")
     @classmethod
     def sort_tasks(cls,  tasks: List) -> List[TaskToGroupReturnScheme]:
-        tasks.sort(key=lambda x: (x.priority, x.expire_on), reverse=True)
-        return tasks    
+        return sorted(tasks, key=lambda x: (x.expire_on, x.priority), reverse=True)

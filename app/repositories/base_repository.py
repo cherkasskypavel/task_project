@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 import datetime
-from typing import Optional
-from sqlalchemy import insert, select, update, delete, Column
-from sqlalchemy import bindparam, text
+from sqlalchemy import insert, select, update, delete
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

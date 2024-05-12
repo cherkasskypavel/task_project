@@ -2,9 +2,9 @@ from fastapi import FastAPI
 import uvicorn
 
 from app.api.endpoints.admin import admin
-from app.api.endpoints.users import auth
-from app.api.endpoints.tasks import tasks
 from app.api.endpoints.dashboard import dashboard
+from app.api.endpoints.tasks import tasks
+from app.api.endpoints.users import auth
 
 
 app = FastAPI()

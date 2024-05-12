@@ -1,12 +1,12 @@
 from typing import Optional
 from fastapi import APIRouter, Depends
 
-from app.services.task_service import TaskService
-from app.utils.unitofwork import IUnitOfWork
-from app.utils.main_uow import MainUOW
-from app.api.schemas.user import UserFromToken
 from app.api.schemas.task import TaskToGroups
+from app.api.schemas.user import UserFromToken
 from app.core.security.auth import get_user_from_token
+from app.services.task_service import TaskService
+from app.utils.main_uow import MainUOW
+from app.utils.unitofwork import IUnitOfWork
 
 tasks = APIRouter(prefix="/tasks")
 
@@ -46,7 +46,6 @@ async def check_one_task(id: int,
                          user: UserFromToken = Depends(get_user_from_token)):
     task = await service.get_one_task(id, user)
     return task
-
 
 
 @tasks.delete("/delete")

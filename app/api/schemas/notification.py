@@ -15,3 +15,4 @@ class GroupTaskNotification(BaseNotification):
 
     message: str = "Задача обновлена"
     task: TaskBaseReturnScheme
+

@@ -1,5 +1,7 @@
-from app.repositories.base_repository import SARepository
+from typing import List
+
 from app.db.models import Group, User
+from app.repositories.base_repository import SARepository
 
 class GroupRepository(SARepository):
     model = Group
@@ -13,8 +15,7 @@ class GroupRepository(SARepository):
         group.members.remove(member)    
 
 
-    async def get_members(self, group: Group):
-        # await self.session.refresh(group)
+    async def get_members(self, group: Group) -> List[User]:
         result = group.members
         return result
     

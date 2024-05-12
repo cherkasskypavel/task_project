@@ -4,11 +4,10 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security.oauth2 import OAuth2PasswordBearer
 import jwt
 
-
-from app.api.schemas.user import UserLogin, UserReturn, UserFromToken
 from app.api.schemas.access_token import Token
-from app.core.security.cryptography import verify_password
+from app.api.schemas.user import UserLogin, UserReturn, UserFromToken
 from app.core.config import settings
+from app.core.security.cryptography import verify_password
 
 oauth2scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -38,7 +37,7 @@ def authenticate_user(logging_user: UserLogin,
     return generate_jwt(token_payload)
 
 
-def get_user_from_token(token: str = Depends(oauth2scheme)):
+def get_user_from_token(token: str = Depends(oauth2scheme)) -> UserFromToken:
     try:
         user = jwt.decode(token,
                         key=settings.JWT_KEY, 
